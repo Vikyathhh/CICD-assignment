@@ -15,7 +15,7 @@ jobs:
         run: |
           pip install -r requirements.txt
       
-      # Task 1.1: Add Linting
+
       - name: Lint Python code
         run: |
           # Run flake8 if a config file is found, otherwise skip
@@ -26,7 +26,7 @@ jobs:
             echo "No lint configuration found, skipping linting."
           fi
           
-      # Task 1.2: Add Testing
+
       - name: Run Python tests
         run: |
           # Run pytest if a config file or tests directory is found, otherwise skip
@@ -38,9 +38,9 @@ jobs:
           fi
   
   deploy:
-    # This line is new: It links to the 'PROD' environment secrets you created
+
     environment: PROD 
-    # This ensures the deploy job only runs if the backend_flask job (with linting/testing) succeeds
+
     needs: backend_flask
     runs-on: ubuntu-latest
     steps:
@@ -50,18 +50,18 @@ jobs:
       - name: List repository files
         run: ls -R
 
-      # Task 3.1: Build Docker Image
+
       - name: Build Docker Image
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/backend_flask:latest .
           # The repo name 'backend_flask' must match your Docker Hub repo name
           
-      # Task 3.2: Log in to Docker Hub (Uses secrets from the 'PROD' environment)
+
       - name: Log in to Docker Hub
-        # THIS LINE IS UPDATED to use your secret name: DOCKERHUB_ACCESS_TOKEN
+
         run: echo "${{ secrets.DOCKERHUB_ACCESS_TOKEN }}" | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
-      # Task 3.3: Push Docker Image
+     
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/backend_flask:latest
 
