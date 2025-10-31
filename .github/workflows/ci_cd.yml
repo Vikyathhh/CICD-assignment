@@ -1,65 +1,67 @@
-name: CI/CD
-
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
+on: push
 jobs:
   backend_flask:
-    name: Backend (Flask)
     runs-on: ubuntu-latest
-
     steps:
-      # Checkout the repository
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: '3.10'
 
-      # Install Python dependencies
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-      # Step 3: Lint Python code
-      #### 
-
-      # Step 4: Run Python tests
-      ####
-
+          pip install -r requirements.txt
+      
+      # Task 1.1: Add Linting
+      - name: Lint Python code
+        run: |
+          # Run flake8 if a config file is found, otherwise skip
+          if [ -f .flake8 ] || [ -f setup.cfg ] || [ -f tox.ini ] || [ -f .pep8 ]; then
+            pip install flake8
+            flake8
+          else
+            echo "No lint configuration found, skipping linting."
+          fi
+          
+      # Task 1.2: Add Testing
+      - name: Run Python tests
+        run: |
+          # Run pytest if a config file or tests directory is found, otherwise skip
+          if [ -f pytest.ini ] || ls tests; then
+            pip install pytest
+            pytest
+          else
+            echo "No tests found, skipping tests."
+          fi
+  
   deploy:
-    name: Deploy & Push to Docker Hub
-    needs: [backend_flask]
+    # This line is new: It links to the 'PROD' environment secrets you created
+    environment: PROD 
+    # This ensures the deploy job only runs if the backend_flask job (with linting/testing) succeeds
+    needs: backend_flask
     runs-on: ubuntu-latest
-    # Important step - add your environment name
-    # environment: PROD
     steps:
-        - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-        # Optional: List repository files to verify the docker-compose file exists
-        - name: List repository files
-          run: ls -al
+      - name: List repository files
+        run: ls -R
 
-    # Step 7: Build docker image 
-    # Go to dockerhub.com
-    # Create a new repository - backend_flask
-    # Create a new access token - <access_token>
-    # Note down your username - <username>
-    # Add the following secrets to your GitHub repository - Environment (name = TEST)
-    # add the Environment name to the deploy job above (important step)
-    # https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions
-    #### 
+      # Task 3.1: Build Docker Image
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/backend_flask:latest .
+          # The repo name 'backend_flask' must match your Docker Hub repo name
+          
+      # Task 3.2: Log in to Docker Hub (Uses secrets from the 'PROD' environment)
+      - name: Log in to Docker Hub
+        # Uses the DOCKERHUB_TOKEN you created as an environment secret
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
-    # Step 8: # Log in to Docker Hub
-    #### 
+      # Task 3.3: Push Docker Image
+      - name: Push Docker Image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/backend_flask:latest
 
-
-    # Step 8: Push docker image to dockerhub
-    ####
-    
