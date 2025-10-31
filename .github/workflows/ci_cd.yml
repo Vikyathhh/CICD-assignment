@@ -58,8 +58,8 @@ jobs:
           
       # Task 3.2: Log in to Docker Hub (Uses secrets from the 'PROD' environment)
       - name: Log in to Docker Hub
-        # Uses the DOCKERHUB_TOKEN you created as an environment secret
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        # THIS LINE IS UPDATED to use your secret name: DOCKERHUB_ACCESS_TOKEN
+        run: echo "${{ secrets.DOCKERHUB_ACCESS_TOKEN }}" | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
       # Task 3.3: Push Docker Image
       - name: Push Docker Image
